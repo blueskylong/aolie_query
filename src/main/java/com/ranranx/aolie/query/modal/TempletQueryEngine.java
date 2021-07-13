@@ -1,6 +1,7 @@
 package com.ranranx.aolie.query.modal;
 
 import com.ranranx.aolie.core.common.CommonUtils;
+import com.ranranx.aolie.core.common.IdGenerator;
 import com.ranranx.aolie.core.datameta.datamodel.*;
 import com.ranranx.aolie.core.datameta.dto.BlockViewDto;
 import com.ranranx.aolie.core.ds.definition.SqlExp;
@@ -20,6 +21,7 @@ import com.ranranx.aolie.querydesign.dto.QrTempletDetailDto;
 import com.ranranx.aolie.querydesign.dto.QrTempletQuery;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 自定义查询的模板查询引擎
@@ -40,6 +42,7 @@ import java.util.*;
 public class TempletQueryEngine {
 
 
+    private static AtomicInteger TEMP_TABLE_SER = new AtomicInteger(0);
     private HandlerFactory handlerFactory;
     /**
      * 查询定义信息
@@ -206,7 +209,7 @@ public class TempletQueryEngine {
         String sDetailSql = detailAndGroupFieldExp[0];
         String sGroupSql = detailAndGroupFieldExp[1];
         String tempTableName = genTempTableName();
-        sbSql.append("create table ").append(tempTableName).append(" IGNORE as ");
+        sbSql.append("create TEMPORARY table  ").append(tempTableName).append(" IGNORE as ");
         //增加上层查询
         Map<String, Object> mapParam = new HashMap<>();
         String innerSql = getDetailSql(lstColInfo, mapParam, dataTableName,
@@ -214,18 +217,18 @@ public class TempletQueryEngine {
         sbSql.append(getDetailGroupSql(lstColInfo, sGroupSql, innerSql, tableAliasOut));
 
 
-        String delet = "drop table " + tempTableName;
-        SqlExp exp = new SqlExp(delet);
-        try {
-            UpdateParam param1 = new UpdateParam();
-            param1.setSqlExp(exp);
-            handlerFactory.handleUpdate(param1);
-        } catch (Exception e) {
+//        String delet = "drop table " + tempTableName;
+//        SqlExp exp = new SqlExp(delet);
+//        try {
+//            UpdateParam param1 = new UpdateParam();
+//            param1.setSqlExp(exp);
+//            handlerFactory.handleUpdate(param1);
+//        } catch (Exception e) {
+//
+//        }
 
-        }
 
-
-        exp = new SqlExp();
+        SqlExp exp = new SqlExp();
         exp.setSql(sbSql.toString());
         exp.setParamValues(mapParam);
         UpdateParam param = new UpdateParam();
@@ -341,7 +344,7 @@ public class TempletQueryEngine {
     }
 
     private String genTempTableName() {
-        return "t_1";
+        return "aolie_q_t_" + IdGenerator.getNextId(TempletQueryEngine.class.getName());
     }
 
     public void updateCode(String tableName, List<VerticalSeparatorInfo> lstVerCols) {
